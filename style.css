@@ -1,0 +1,37 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    position: relative;
+    width: 80vw; /* Ocupa el 80% del ancho de la pantalla */
+    max-width: 640px; /* Un tamaño máximo */
+    border: 5px solid #333;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    /* Mantiene la proporción de video (16:9) */
+    aspect-ratio: 16 / 9; 
+}
+
+/* Ocultamos el video original y usamos el canvas para mostrar 
+  tanto el video como el esqueleto.
+*/
+.input_video {
+    display: none;
+}
+
+.output_canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+}
