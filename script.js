@@ -27,74 +27,103 @@ const canvasCtx = canvasElement.getContext('2d');
 // Esta función se ejecutará CADA VEZ que MediaPipe detecte una postura
 function onResults(results) {
   
-  // Obtenemos el elemento de texto (que añadimos en el HTML)
+  // Obtenemos el elemento de texto
   const statusEl = document.getElementById('posture-status');
 
-  // Limpiamos el canvas antes de dibujar
+  // Limpiamos el canvas
   canvasCtx.save();
   canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-  // Dibujamos la IMAGEN de la cámara en el canvas
+  // Dibujamos la IMAGEN de la cámara
   canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
-  // Dibujamos el ESQUELETO (si se detecta)
-  if (results.poseLandmarks) {
-    // Dibujamos las conexiones (líneas)
-    drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
-    // Dibujamos los puntos (landmarks)
-    drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
-  
-
-    // --- ¡AQUÍ EMPIEZA NUESTRA NUEVA LÓGICA DE POSTURA! ---
-
-    try {
-        const landmarks = results.poseLandmarks;
-
-        // 1. Obtenemos los 3 puntos que necesitamos (del lado izquierdo)
-        const leftEar = landmarks[7];     // Oreja
-        const leftShoulder = landmarks[11]; // Hombro
-        const leftHip = landmarks[23];      // Cadera
-
-        // 2. Verificamos si todos los puntos son "visibles"
-        // Si no estás de lado, o muy lejos, la IA podría no verlos.
-        const visibilityThreshold = 0.5; // (un 50% de confianza)
-
-        if (leftEar.visibility > visibilityThreshold && 
-            leftShoulder.visibility > visibilityThreshold && 
-            leftHip.visibility > visibilityThreshold) 
-        {
-            
-            // 3. ¡Calculamos el ángulo!
-            // Usamos el hombro (leftShoulder) como el vértice.
-            const postureAngle = calculateAngle(leftEar, leftShoulder, leftHip);
-
-            // 4. Analizamos el ángulo y mostramos el mensaje
-            if (postureAngle > 165) { // 165 grados es un buen inicio
-                statusEl.innerHTML = "POSTURA: CORRECTA";
-                statusEl.style.backgroundColor = "rgba(0, 255, 0, 0.5)"; // Verde
-            } else {
-                statusEl.innerHTML = "POSTURA: INCORRECTA";
-                statusEl.style.backgroundColor = "rgba(255, 0, 0, 0.5)"; // Rojo
-            }
-        
-        } else {
-            // Si no se ven los puntos, no podemos calcular
-            statusEl.innerHTML = "Colócate de lado...";
-            statusEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)"; // Neutral
-        }
-
-    } catch (error) {
-        // En caso de que algo falle
-        console.error("Error al analizar la postura:", error);
-    }
-    // --- FIN DE LA NUEVA LÓGICA ---
-
-  } else {
-    // Si no se detecta a nadie
+  // Verificamos si hay landmarks (puntos del cuerpo)
+  if (!results.poseLandmarks) {
     statusEl.innerHTML = "No se detecta a nadie";
     statusEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+    canvasCtx.restore();
+    return; // Salimos de la función si no hay nadie
   }
 
+  // --- SI HAY LANDMARKS, CONTINUAMOS ---
+
+  // Dibujamos el esqueleto
+  drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
+  drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
+  
+  // --- LÓGICA DE POSTURA AVANZADA ---
+  try {
+    const landmarks = results.poseLandmarks;
+
+    // --- 1. OBTENER PUNTOS CLAVE (LADO IZQUIERDO) ---
+    // (Usamos el lado izquierdo, asumiendo que la persona está de perfil izquierdo)
+    const leftEar = landmarks[7];
+    const leftShoulder = landmarks[11];
+    const leftHip = landmarks[23];
+    const leftKnee = landmarks[25];
+    const leftAnkle = landmarks[27];
+
+    // --- 2. VERIFICAR VISIBILIDAD ---
+    // Si no podemos ver los puntos clave, no podemos calcular.
+    const visibilityThreshold = 0.5;
+    if (leftShoulder.visibility < visibilityThreshold || 
+        leftHip.visibility < visibilityThreshold || 
+        leftKnee.visibility < visibilityThreshold) {
+      
+      statusEl.innerHTML = "Colócate de lado...";
+      statusEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+      canvasCtx.restore();
+      return; // Salimos si no se ven los puntos
+    }
+
+    // --- 3. CALCULAR ÁNGULOS ---
+    
+    // Ángulo de la cadera (para saber si está sentado)
+    const angleHip = calculateAngle(leftShoulder, leftHip, leftKnee);
+    
+    // Ángulo de la rodilla (para saber si está sentado)
+    const angleKnee = calculateAngle(leftHip, leftKnee, leftAnkle);
+    
+    // Ángulo de la espalda (para saber si está encorvado)
+    const angleBack = calculateAngle(leftEar, leftShoulder, leftHip);
+
+    
+    // --- 4. APLICAR LÓGICA DE ESTADOS (LA CLAVE) ---
+
+    // Umbrales (puedes ajustarlos)
+    const sittingHipAngle = 130;  // Ángulo máximo de cadera para "sentado"
+    const sittingKneeAngle = 130; // Ángulo máximo de rodilla para "sentado"
+    const standingHipAngle = 160; // Ángulo mínimo de cadera para "de pie"
+    const standingKneeAngle = 160;// Ángulo mínimo de rodilla para "de pie"
+    const goodPostureAngle = 165; // Ángulo mínimo de espalda para "buena postura"
+
+    // Estado 1: ¿Está de pie?
+    if (angleHip > standingHipAngle && angleKnee > standingKneeAngle) {
+      statusEl.innerHTML = "ESTADO: DE PIE";
+      statusEl.style.backgroundColor = "rgba(0, 150, 255, 0.5)"; // Azul
+
+    // Estado 2: ¿Está sentado?
+    } else if (angleHip < sittingHipAngle && angleKnee < sittingKneeAngle) {
+      // Si está sentado, AHORA SÍ revisamos la espalda
+      if (angleBack < goodPostureAngle) {
+        statusEl.innerHTML = "POSTURA: INCORRECTA (Encorvado)";
+        statusEl.style.backgroundColor = "rgba(255, 0, 0, 0.5)"; // Rojo
+      } else {
+        statusEl.innerHTML = "POSTURA: CORRECTA";
+        statusEl.style.backgroundColor = "rgba(0, 255, 0, 0.5)"; // Verde
+      }
+    
+    // Estado 3: Ni sentado ni de pie (en transición)
+    } else {
+      statusEl.innerHTML = "ESTADO: Transición...";
+      statusEl.style.backgroundColor = "rgba(128, 128, 128, 0.5)"; // Gris
+    }
+
+  } catch (error) {
+    console.error("Error al analizar la postura:", error);
+    statusEl.innerHTML = "Error de cálculo";
+  }
+  
   canvasCtx.restore();
 }
 // --- 4. INICIALIZAR MEDIAPIPE ---
@@ -132,5 +161,6 @@ const camera = new Camera(videoElement, {
 // Iniciamos la cámara
 
 camera.start();
+
 
 
