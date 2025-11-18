@@ -11,7 +11,7 @@ body {
 
 .container {
     position: relative;
-    width: 80vw; /* Ocupa el 80% del ancho de la pantalla */
+    width: 90vw; /* Ocupa el 80% del ancho de la pantalla */
     max-width: 640px; /* Un tamaño máximo */
     border: 5px solid #333;
     border-radius: 10px;
@@ -34,4 +34,5 @@ body {
     width: 100%;
     height: 100%;
     border-radius: 10px;
+
 }
