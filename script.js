@@ -17,7 +17,6 @@ function calculateAngle(a, b, c) {
 
     return angle;
 }
-
 // --- 1. CONFIGURACIÓN INICIAL ---
 
 // Obtenemos los elementos del HTML
@@ -92,3 +91,4 @@ const camera = new Camera(videoElement, {
 // Iniciamos la cámara
 
 camera.start();
+
