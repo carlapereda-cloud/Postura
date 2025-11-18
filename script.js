@@ -65,7 +65,7 @@ function onResults(results) {
 
     // --- 2. VERIFICAR VISIBILIDAD ---
     // Si no podemos ver los puntos clave, no podemos calcular.
-    const visibilityThreshold = 0.5;
+    const visibilityThreshold = 0.3;
     if (leftShoulder.visibility < visibilityThreshold || 
         leftHip.visibility < visibilityThreshold || 
         leftKnee.visibility < visibilityThreshold) {
@@ -161,6 +161,7 @@ const camera = new Camera(videoElement, {
 // Iniciamos la cámara
 
 camera.start();
+
 
 
 
