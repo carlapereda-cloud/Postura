@@ -135,7 +135,7 @@ const pose = new Pose({locateFile: (file) => {
 
 // Configuramos las opciones del detector
 pose.setOptions({
-  modelComplexity: 1,      // 0, 1, ó 2. Más alto = más preciso pero más lento.
+  modelComplexity: 2,      // 0, 1, ó 2. Más alto = más preciso pero más lento.
   smoothLandmarks: true,   // Suaviza el movimiento de los puntos
   enableSegmentation: false, // Nosotros no necesitamos esto
   minDetectionConfidence: 0.5, // Confianza mínima para detectar una persona
@@ -161,6 +161,7 @@ const camera = new Camera(videoElement, {
 // Iniciamos la cámara
 
 camera.start();
+
 
 
 
