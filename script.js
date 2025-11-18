@@ -24,38 +24,79 @@ const videoElement = document.getElementsByClassName('input_video')[0];
 const canvasElement = document.getElementsByClassName('output_canvas')[0];
 const canvasCtx = canvasElement.getContext('2d');
 
-// --- 2. LÓGICA DE MEDIAPIPE ---
-
 // Esta función se ejecutará CADA VEZ que MediaPipe detecte una postura
 function onResults(results) {
+  
+  // Obtenemos el elemento de texto (que añadimos en el HTML)
+  const statusEl = document.getElementById('posture-status');
+
   // Limpiamos el canvas antes de dibujar
   canvasCtx.save();
   canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
   // Dibujamos la IMAGEN de la cámara en el canvas
-  // 'results.image' es la imagen de la cámara
   canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
-  // Dibujamos el ESQUELETO (los puntos y líneas)
+  // Dibujamos el ESQUELETO (si se detecta)
   if (results.poseLandmarks) {
     // Dibujamos las conexiones (líneas)
     drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
     // Dibujamos los puntos (landmarks)
     drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
+  
+
+    // --- ¡AQUÍ EMPIEZA NUESTRA NUEVA LÓGICA DE POSTURA! ---
+
+    try {
+        const landmarks = results.poseLandmarks;
+
+        // 1. Obtenemos los 3 puntos que necesitamos (del lado izquierdo)
+        const leftEar = landmarks[7];     // Oreja
+        const leftShoulder = landmarks[11]; // Hombro
+        const leftHip = landmarks[23];      // Cadera
+
+        // 2. Verificamos si todos los puntos son "visibles"
+        // Si no estás de lado, o muy lejos, la IA podría no verlos.
+        const visibilityThreshold = 0.5; // (un 50% de confianza)
+
+        if (leftEar.visibility > visibilityThreshold && 
+            leftShoulder.visibility > visibilityThreshold && 
+            leftHip.visibility > visibilityThreshold) 
+        {
+            
+            // 3. ¡Calculamos el ángulo!
+            // Usamos el hombro (leftShoulder) como el vértice.
+            const postureAngle = calculateAngle(leftEar, leftShoulder, leftHip);
+
+            // 4. Analizamos el ángulo y mostramos el mensaje
+            if (postureAngle > 165) { // 165 grados es un buen inicio
+                statusEl.innerHTML = "POSTURA: CORRECTA";
+                statusEl.style.backgroundColor = "rgba(0, 255, 0, 0.5)"; // Verde
+            } else {
+                statusEl.innerHTML = "POSTURA: INCORRECTA";
+                statusEl.style.backgroundColor = "rgba(255, 0, 0, 0.5)"; // Rojo
+            }
+        
+        } else {
+            // Si no se ven los puntos, no podemos calcular
+            statusEl.innerHTML = "Colócate de lado...";
+            statusEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)"; // Neutral
+        }
+
+    } catch (error) {
+        // En caso de que algo falle
+        console.error("Error al analizar la postura:", error);
+    }
+    // --- FIN DE LA NUEVA LÓGICA ---
+
+  } else {
+    // Si no se detecta a nadie
+    statusEl.innerHTML = "No se detecta a nadie";
+    statusEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
   }
+
   canvasCtx.restore();
-
-  // --- 3. AQUÍ VA EL ANÁLISIS DE POSTURA ---
-  // Este es el siguiente paso: analizar los 'results.poseLandmarks'
-  // (Lo vemos en la sección "Siguiente Nivel")
-  if (results.poseLandmarks) {
-    // Ejemplo: Obtener la coordenada Y del hombro izquierdo
-    // const leftShoulder = results.poseLandmarks[11]; // El punto 11 es el hombro izq.
-    // console.log("Hombro Izquierdo (Y):", leftShoulder.y);
-  }
-
 }
-
 // --- 4. INICIALIZAR MEDIAPIPE ---
 
 // Creamos una nueva instancia del detector de postura
@@ -91,4 +132,5 @@ const camera = new Camera(videoElement, {
 // Iniciamos la cámara
 
 camera.start();
+
 
