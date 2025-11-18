@@ -1,3 +1,23 @@
+// --- FUNCIÓN DE CÁLCULO DE ÁNGULO ---
+function calculateAngle(a, b, c) {
+    // a, b, c son objetos con {x, y}
+    // b es el "vértice" del ángulo (ej. el hombro)
+
+    // Calcula los radianes
+    let radians = Math.atan2(c.y - b.y, c.x - b.x) - 
+                  Math.atan2(a.y - b.y, a.x - b.x);
+    
+    // Convierte a grados
+    let angle = Math.abs(radians * 180.0 / Math.PI);
+
+    // El ángulo debe estar entre 0 y 180
+    if (angle > 180.0) {
+        angle = 360 - angle;
+    }
+
+    return angle;
+}
+
 // --- 1. CONFIGURACIÓN INICIAL ---
 
 // Obtenemos los elementos del HTML
@@ -70,4 +90,5 @@ const camera = new Camera(videoElement, {
 });
 
 // Iniciamos la cámara
+
 camera.start();
