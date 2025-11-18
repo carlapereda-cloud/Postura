@@ -88,37 +88,48 @@ function onResults(results) {
     const angleBack = calculateAngle(leftEar, leftShoulder, leftHip);
 
     
-    // --- 4. APLICAR LÓGICA DE ESTADOS (LA CLAVE) ---
+  // --- 4. APLICAR LÓGICA DE ESTADOS (LA CLAVE) ---
 
     // Umbrales (puedes ajustarlos)
-    const sittingHipAngle = 130;  // Ángulo máximo de cadera para "sentado"
-    const sittingKneeAngle = 130; // Ángulo máximo de rodilla para "sentado"
-    const standingHipAngle = 160; // Ángulo mínimo de cadera para "de pie"
-    const standingKneeAngle = 160;// Ángulo mínimo de rodilla para "de pie"
-    const goodPostureAngle = 165; // Ángulo mínimo de espalda para "buena postura"
+    const sittingHipAngle = 130;
+    const sittingKneeAngle = 130;
+    const standingHipAngle = 160;
+    const standingKneeAngle = 160;
+    const goodPostureAngle = 165; 
+
+    // --- FORMATEAMOS LOS ÁNGULOS PARA MOSTRARLOS ---
+    // Usamos Math.round() para quitar los decimales y que sea más fácil de leer
+    const backAngleDisplay = Math.round(angleBack);
+    const hipAngleDisplay = Math.round(angleHip);
+    const kneeAngleDisplay = Math.round(angleKnee);
 
     // Estado 1: ¿Está de pie?
     if (angleHip > standingHipAngle && angleKnee > standingKneeAngle) {
-      statusEl.innerHTML = "ESTADO: DE PIE";
+      // Usamos <br> para un salto de línea en HTML
+      statusEl.innerHTML = `ESTADO: DE PIE <br> Espalda: ${backAngleDisplay}°`;
       statusEl.style.backgroundColor = "rgba(0, 150, 255, 0.5)"; // Azul
 
     // Estado 2: ¿Está sentado?
     } else if (angleHip < sittingHipAngle && angleKnee < sittingKneeAngle) {
+      
+      // Creamos el texto base con todos los ángulos
+      let angleText = `Cadera: ${hipAngleDisplay}° Rodilla: ${kneeAngleDisplay}° <br> Espalda: ${backAngleDisplay}°`;
+
       // Si está sentado, AHORA SÍ revisamos la espalda
       if (angleBack < goodPostureAngle) {
-        statusEl.innerHTML = "POSTURA: INCORRECTA (Encorvado)";
+        statusEl.innerHTML = `POSTURA: INCORRECTA <br> ${angleText}`;
         statusEl.style.backgroundColor = "rgba(255, 0, 0, 0.5)"; // Rojo
       } else {
-        statusEl.innerHTML = "POSTURA: CORRECTA";
+        statusEl.innerHTML = `POSTURA: CORRECTA <br> ${angleText}`;
         statusEl.style.backgroundColor = "rgba(0, 255, 0, 0.5)"; // Verde
       }
     
     // Estado 3: Ni sentado ni de pie (en transición)
     } else {
-      statusEl.innerHTML = "ESTADO: Transición...";
+      statusEl.innerHTML = `ESTADO: Transición... <br> Espalda: ${backAngleDisplay}°`;
       statusEl.style.backgroundColor = "rgba(128, 128, 128, 0.5)"; // Gris
     }
-
+      
   } catch (error) {
     console.error("Error al analizar la postura:", error);
     statusEl.innerHTML = "Error de cálculo";
@@ -161,6 +172,7 @@ const camera = new Camera(videoElement, {
 // Iniciamos la cámara
 
 camera.start();
+
 
 
 
