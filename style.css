@@ -47,5 +47,7 @@ body {
     color: white;
     padding: 10px 20px;
     border-radius: 10px;
-    font-size: 1.5em; /* Un tamaño de letra más grande */
+    font-size: 1.5em; 
+    min-width: 300px; /* <-- AÑADE ESTO */
+    text-align: center; /* <-- AÑADE ESTO */
 }
